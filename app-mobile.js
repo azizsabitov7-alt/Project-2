@@ -1,3 +1,16 @@
+// Тестовая функция для проверки нажатий
+function testTap() {
+    alert('✅ Кнопка работает!');
+    console.log('✅ Tap detected');
+    return true;
+}
+
+// На все кнопки повесьте эту функцию временно
+document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', testTap);
+    btn.addEventListener('touchstart', testTap);
+});
+
 // Простой Todo App для мобильных устройств
 console.log('📱 Мобильное приложение загружается...');
 
