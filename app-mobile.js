@@ -1,19 +1,3 @@
-// Тестовая функция для проверки нажатий
-function testTap() {
-    alert('✅ Кнопка работает!');
-    console.log('✅ Tap detected');
-    return true;
-}
-
-// На все кнопки повесьте эту функцию временно
-document.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', testTap);
-    btn.addEventListener('touchstart', testTap);
-});
-
-// Простой Todo App для мобильных устройств
-console.log('📱 Мобильное приложение загружается...');
-
 // Firebase конфигурация
 const firebaseConfig = {
     apiKey: "AIzaSyBHAnTe-bEl5AZIk5y2iiAQNHCJRcvuRzA",
@@ -25,13 +9,16 @@ const firebaseConfig = {
     measurementId: "G-9Y6RDHWVH8"
 };
 
-// Глобальные переменные
+// Инициализация
 let currentUser = null;
 let tasks = [];
+let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-// Инициализация при загрузке
+// Запуск при загрузке
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM готов');
+    console.log('📱 Мобильное приложение запускается...');
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Is Mobile:', isMobile);
     
     try {
         firebase.initializeApp(firebaseConfig);
@@ -40,55 +27,26 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('ℹ️ Firebase уже инициализирован');
     }
     
-    // Настройка обработчиков для мобильных
-    setupMobileEventListeners();
-    
-    // Проверяем аутентификацию
+    setupEventListeners();
     setupAuth();
 });
 
-// Настройка обработчиков для мобильных
-function setupMobileEventListeners() {
-    console.log('🛠️ Настройка мобильных обработчиков...');
+// Настройка обработчиков
+function setupEventListeners() {
+    console.log('🛠️ Настройка обработчиков...');
     
-    // 1. Кнопка "Добавить" - используем touchstart для мобильных
-    const addBtn = document.getElementById('add-task-btn');
-    if (addBtn) {
-        // Добавляем оба обработчика
-        addBtn.addEventListener('click', addTask);
-        addBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault(); // Предотвращаем двойное срабатывание
-            addTask();
-        }, {passive: false});
-        
-        // Стиль для лучшего нажатия на мобильных
-        addBtn.style.cssText += 'padding: 18px 25px; font-size: 18px;';
-        console.log('✅ Кнопка "Добавить" настроена');
-    }
-    
-    // 2. Поле ввода
-    const input = document.getElementById('new-task-input');
-    if (input) {
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addTask();
-        });
-        
-        // Увеличиваем размер для мобильных
-        input.style.cssText += 'padding: 18px; font-size: 18px;';
-    }
-    
-    // 3. Кнопки входа
+    // Кнопка входа через Google
     const googleBtn = document.getElementById('google-login-btn');
     if (googleBtn) {
-        googleBtn.addEventListener('click', signInWithGoogle);
+        googleBtn.addEventListener('click', handleGoogleLogin);
         googleBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
-            signInWithGoogle();
+            handleGoogleLogin();
         }, {passive: false});
-        
-        googleBtn.style.cssText += 'padding: 20px; font-size: 18px; margin: 10px 0;';
+        console.log('✅ Кнопка Google настроена');
     }
     
+    // Локальный режим
     const localBtn = document.getElementById('local-mode-btn');
     if (localBtn) {
         localBtn.addEventListener('click', enableLocalMode);
@@ -96,28 +54,30 @@ function setupMobileEventListeners() {
             e.preventDefault();
             enableLocalMode();
         }, {passive: false});
-        
-        localBtn.style.cssText += 'padding: 20px; font-size: 18px; margin: 10px 0;';
     }
     
-    // 4. Фильтры - увеличиваем кнопки
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            renderTasks();
-        });
-        btn.style.cssText += 'padding: 15px 25px; font-size: 16px; margin: 5px;';
-    });
+    // Кнопка добавления задачи
+    const addBtn = document.getElementById('add-task-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', addTask);
+        addBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            addTask();
+        }, {passive: false});
+    }
     
-    // 5. Кнопка выхода
+    // Поле ввода
+    const input = document.getElementById('new-task-input');
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addTask();
+        });
+    }
+    
+    // Выход
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', signOut);
-        logoutBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            signOut();
-        }, {passive: false});
     }
     
     console.log('✅ Все обработчики настроены');
@@ -125,48 +85,95 @@ function setupMobileEventListeners() {
 
 // Настройка аутентификации
 function setupAuth() {
+    console.log('🔐 Настройка аутентификации...');
+    
+    // Проверяем редирект после входа (для мобильных)
+    firebase.auth().getRedirectResult().then((result) => {
+        if (result.user) {
+            console.log('✅ Успешный вход через редирект');
+            handleAuthSuccess(result.user);
+        }
+    }).catch((error) => {
+        console.error('❌ Ошибка редиректа:', error);
+        showMessage('Ошибка входа: ' + error.message, 'error');
+    });
+    
+    // Слушатель состояния аутентификации
     firebase.auth().onAuthStateChanged((user) => {
-        console.log('👤 Статус аутентификации:', user ? 'Вошёл' : 'Не вошёл');
+        console.log('🔄 Состояние аутентификации изменено:', user ? user.email : 'Нет пользователя');
         
         if (user) {
-            currentUser = {
-                uid: user.uid,
-                email: user.email
-            };
-            
-            // Показываем интерфейс
-            document.getElementById('user-email').textContent = user.email;
-            document.getElementById('user-info').style.display = 'block';
-            document.getElementById('app-content').style.display = 'block';
-            document.getElementById('auth-section').style.display = 'none';
-            
-            // Загружаем задачи
-            loadTasks();
-            
-            showMobileMessage('✅ Вход выполнен!', 'success');
-            
+            handleAuthSuccess(user);
         } else {
+            // Пользователь не вошел
             currentUser = null;
+            tasks = [];
+            
+            // Показываем экран входа
             document.getElementById('auth-section').style.display = 'block';
             document.getElementById('app-content').style.display = 'none';
+            document.getElementById('user-info').style.display = 'none';
+            
+            console.log('👤 Пользователь не авторизован');
         }
     });
 }
 
-// Вход через Google
-function signInWithGoogle() {
+// Обработка успешной аутентификации
+function handleAuthSuccess(user) {
+    console.log('✅ Пользователь авторизован:', user.email);
+    
+    currentUser = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName
+    };
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('todo_user_mobile', JSON.stringify(currentUser));
+    
+    // Показываем интерфейс
+    document.getElementById('user-email').textContent = user.email;
+    document.getElementById('user-info').style.display = 'block';
+    document.getElementById('app-content').style.display = 'block';
+    document.getElementById('auth-section').style.display = 'none';
+    
+    // Загружаем задачи
+    loadTasks();
+    
+    showMessage('✅ Успешный вход!', 'success');
+}
+
+// Вход через Google (с учетом мобильных устройств)
+function handleGoogleLogin() {
     console.log('🔄 Попытка входа через Google...');
+    console.log('Мобильное устройство:', isMobile);
     
     const provider = new firebase.auth.GoogleAuthProvider();
     
-    // На мобильных лучше использовать redirect
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    // На мобильных устройствах используем редирект
+    if (isMobile) {
+        console.log('📱 Используем редирект для мобильного устройства');
+        showMessage('Открывается окно входа...', 'info');
+        
+        // Сохраняем информацию о попытке входа
+        localStorage.setItem('login_attempt', 'true');
+        
+        // Используем редирект
         firebase.auth().signInWithRedirect(provider);
+        
     } else {
-        firebase.auth().signInWithPopup(provider).catch(error => {
-            console.error('❌ Ошибка входа:', error);
-            showMobileMessage('Ошибка входа', 'error');
-        });
+        // На ПК используем popup
+        console.log('💻 Используем popup для ПК');
+        
+        firebase.auth().signInWithPopup(provider)
+            .then((result) => {
+                console.log('✅ Успешный вход через popup');
+            })
+            .catch((error) => {
+                console.error('❌ Ошибка входа:', error);
+                showMessage('Ошибка входа: ' + error.message, 'error');
+            });
     }
 }
 
@@ -179,93 +186,59 @@ function enableLocalMode() {
         email: 'Локальный пользователь'
     };
     
+    localStorage.setItem('todo_user_mobile', JSON.stringify(currentUser));
+    
     document.getElementById('user-email').textContent = 'Локальный пользователь';
     document.getElementById('user-info').style.display = 'block';
     document.getElementById('app-content').style.display = 'block';
     document.getElementById('auth-section').style.display = 'none';
     
     loadTasks();
-    showMobileMessage('📱 Локальный режим', 'info');
+    showMessage('📱 Локальный режим активирован', 'info');
 }
 
 // Выход
 function signOut() {
     firebase.auth().signOut();
+    localStorage.removeItem('todo_user_mobile');
     tasks = [];
-    renderTasks();
+    
+    document.getElementById('auth-section').style.display = 'block';
+    document.getElementById('app-content').style.display = 'none';
+    
+    showMessage('Вы вышли из системы', 'info');
 }
 
-// ДОБАВИТЬ ЗАДАЧУ
-function addTask() {
-    console.log('🎯 Добавление задачи...');
-    
-    const input = document.getElementById('new-task-input');
-    if (!input) {
-        console.error('❌ Поле ввода не найдено');
-        return;
+// Проверяем сохраненного пользователя
+function checkSavedUser() {
+    const savedUser = localStorage.getItem('todo_user_mobile');
+    if (savedUser) {
+        try {
+            const user = JSON.parse(savedUser);
+            console.log('📱 Восстановлен сохраненный пользователь:', user.email);
+            
+            if (user.uid === 'local') {
+                enableLocalMode();
+            }
+        } catch (e) {
+            console.error('❌ Ошибка восстановления:', e);
+        }
     }
-    
-    const text = input.value.trim();
-    if (!text) {
-        showMobileMessage('✏️ Введите текст задачи', 'warning');
-        return;
-    }
-    
-    if (!currentUser) {
-        console.error('❌ Нет пользователя');
-        return;
-    }
-    
-    // Создаем задачу
-    const newTask = {
-        text: text,
-        completed: false,
-        createdAt: new Date().toISOString()
-    };
-    
-    if (currentUser.uid === 'local') {
-        // Локальное сохранение
-        newTask.id = Date.now().toString();
-        tasks.unshift(newTask);
-        saveLocalTasks();
-        renderTasks();
-        updateStats();
-        showMobileMessage('✅ Задача добавлена', 'success');
-        
-    } else {
-        // Сохранение в Firebase
-        firebase.firestore()
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('tasks')
-            .add({
-                ...newTask,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
-                showMobileMessage('✅ Задача добавлена', 'success');
-            })
-            .catch(error => {
-                console.error('❌ Ошибка Firebase:', error);
-                showMobileMessage('❌ Ошибка сохранения', 'error');
-            });
-    }
-    
-    // Очищаем поле ввода
-    input.value = '';
-    input.focus();
 }
 
 // Загрузить задачи
 function loadTasks() {
     if (!currentUser) return;
     
+    console.log('📥 Загрузка задач для пользователя:', currentUser.uid);
+    
     if (currentUser.uid === 'local') {
         // Локальные задачи
-        const saved = localStorage.getItem('mobile_tasks');
+        const saved = localStorage.getItem('mobile_tasks_' + currentUser.uid);
         if (saved) {
             try {
                 tasks = JSON.parse(saved);
+                console.log('📱 Загружено локальных задач:', tasks.length);
             } catch (e) {
                 tasks = [];
             }
@@ -281,72 +254,135 @@ function loadTasks() {
             .collection('tasks')
             .orderBy('createdAt', 'desc')
             .onSnapshot((snapshot) => {
+                console.log('🔥 Получены данные из Firebase:', snapshot.size, 'задач');
+                
                 tasks = [];
                 snapshot.forEach((doc) => {
+                    const data = doc.data();
                     tasks.push({
                         id: doc.id,
-                        ...doc.data()
+                        text: data.text || '',
+                        completed: data.completed || false,
+                        createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
                     });
                 });
+                
                 renderTasks();
                 updateStats();
+                
+            }, (error) => {
+                console.error('❌ Ошибка Firebase:', error);
+                showMessage('Ошибка загрузки задач', 'error');
             });
     }
 }
 
-// Сохранить локальные задачи
-function saveLocalTasks() {
-    localStorage.setItem('mobile_tasks', JSON.stringify(tasks));
+// Добавить задачу
+function addTask() {
+    console.log('🎯 Добавление задачи...');
+    
+    const input = document.getElementById('new-task-input');
+    if (!input) return;
+    
+    const text = input.value.trim();
+    if (!text) {
+        showMessage('Введите текст задачи', 'warning');
+        return;
+    }
+    
+    if (!currentUser) {
+        showMessage('Сначала войдите в систему', 'error');
+        return;
+    }
+    
+    const taskData = {
+        text: text,
+        completed: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    if (currentUser.uid === 'local') {
+        // Локальное сохранение
+        const newTask = {
+            id: Date.now().toString(),
+            ...taskData,
+            createdAt: new Date()
+        };
+        
+        tasks.unshift(newTask);
+        saveLocalTasks();
+        renderTasks();
+        updateStats();
+        showMessage('✅ Задача добавлена (локально)', 'success');
+        
+    } else {
+        // Сохранение в Firebase
+        firebase.firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('tasks')
+            .add(taskData)
+            .then(() => {
+                showMessage('✅ Задача добавлена', 'success');
+            })
+            .catch((error) => {
+                console.error('❌ Ошибка сохранения:', error);
+                showMessage('Ошибка сохранения: ' + error.message, 'error');
+            });
+    }
+    
+    input.value = '';
+    input.focus();
 }
 
-// ОТОБРАЗИТЬ ЗАДАЧИ
+// Сохранить локальные задачи
+function saveLocalTasks() {
+    if (currentUser && currentUser.uid === 'local') {
+        localStorage.setItem('mobile_tasks_' + currentUser.uid, JSON.stringify(tasks));
+    }
+}
+
+// Отобразить задачи
 function renderTasks() {
     const container = document.getElementById('tasks-container');
-    if (!container) {
-        console.error('❌ Контейнер не найден');
-        return;
-    }
+    if (!container) return;
     
     if (tasks.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Задач пока нет</p>';
+        container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">Задач пока нет</p>';
         return;
     }
     
-    // Увеличиваем размер для мобильных
     container.innerHTML = tasks.map(task => `
         <div style="
-            padding: 20px;
+            padding: 15px;
             margin: 10px 0;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             gap: 15px;
-            font-size: 18px;
-            min-height: 60px;
         ">
             <input type="checkbox" 
-                   style="width: 28px; height: 28px;"
+                   style="width: 24px; height: 24px;"
                    ${task.completed ? 'checked' : ''}
                    onchange="toggleTask('${task.id}')">
             <span style="
                 flex: 1;
-                ${task.completed ? 'text-decoration: line-through; color: #6c757d;' : ''}
-                word-break: break-word;
+                ${task.completed ? 'text-decoration: line-through; color: #888;' : ''}
+                font-size: 16px;
             ">
                 ${task.text || ''}
             </span>
             <button onclick="deleteTask('${task.id}')" style="
-                background: #dc3545;
+                background: #ff4444;
                 color: white;
                 border: none;
-                padding: 10px 15px;
-                border-radius: 6px;
-                font-size: 16px;
-                min-width: 50px;
+                padding: 8px 12px;
+                border-radius: 5px;
+                cursor: pointer;
             ">
-                ✕
+                Удалить
             </button>
         </div>
     `).join('');
@@ -391,7 +427,7 @@ async function deleteTask(taskId) {
         saveLocalTasks();
         renderTasks();
         updateStats();
-        showMobileMessage('🗑️ Задача удалена', 'info');
+        showMessage('🗑️ Задача удалена', 'info');
     } else {
         try {
             await firebase.firestore()
@@ -400,6 +436,7 @@ async function deleteTask(taskId) {
                 .collection('tasks')
                 .doc(taskId)
                 .delete();
+            showMessage('🗑️ Задача удалена', 'info');
         } catch (error) {
             console.error('❌ Ошибка удаления:', error);
         }
@@ -418,49 +455,46 @@ function updateStats() {
     if (completedEl) completedEl.textContent = completed;
 }
 
-// Сообщение для мобильных
-function showMobileMessage(text, type = 'info') {
-    console.log(`💬 ${text}`);
+// Показать сообщение
+function showMessage(text, type = 'info') {
+    console.log(`💬 ${type}: ${text}`);
     
-    // Создаем уведомление
+    // Для мобильных лучше использовать alert
+    if (isMobile) {
+        alert(text);
+        return;
+    }
+    
+    // Для ПК - красивое уведомление
     const notification = document.createElement('div');
     notification.textContent = text;
     notification.style.cssText = `
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        padding: 20px 30px;
-        border-radius: 15px;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 8px;
         color: white;
-        font-size: 18px;
-        font-weight: 600;
-        z-index: 10000;
-        text-align: center;
+        font-weight: 500;
+        z-index: 1000;
         background: ${type === 'error' ? '#dc3545' : 
                     type === 'success' ? '#28a745' : 
                     type === 'warning' ? '#ffc107' : '#17a2b8'};
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        max-width: 80%;
-        word-wrap: break-word;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     `;
     
     document.body.appendChild(notification);
     
-    // Автоматически скрываем
     setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transition = 'opacity 0.5s';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 500);
-    }, 2000);
+        notification.remove();
+    }, 3000);
 }
 
 // Глобальные функции
 window.toggleTask = toggleTask;
 window.deleteTask = deleteTask;
 
-console.log('🚀 Мобильное приложение готово!');
+// Проверяем сохраненного пользователя при загрузке
+checkSavedUser();
+
+console.log('🚀 Мобильное приложение готово! Текущий пользователь:', currentUser ? currentUser.email : 'Нет');
