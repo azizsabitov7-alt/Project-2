@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Настройка Firebase</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        code { background: #f5f5f5; padding: 10px; border-radius: 5px; display: block; margin: 10px 0; }
+        .step { margin: 20px 0; padding: 15px; border-left: 4px solid #4285f4; background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <h1>Настройка Firebase для Todo App</h1>
+    
+    <div class="step">
+        <h3>1. Включите Google Authentication:</h3>
+        <p>Firebase Console → Authentication → Sign-in method → Google → Enable</p>
+        <p>Добавьте Project support email</p>
+    </div>
+    
+    <div class="step">
+        <h3>2. Добавьте авторизованные домены:</h3>
+        <p>Authentication → Settings → Authorized domains → Add domain</p>
+        <p>Добавьте: <code>azizsabitov7-alt.github.io</code></p>
+        <p>Также добавьте: <code>localhost</code> для разработки</p>
+    </div>
+    
+    <div class="step">
+        <h3>3. Настройте правила Firestore:</h3>
+        <p>Firestore Database → Rules → Вставьте:</p>
+        <code>
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/tasks/{taskId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+        </code>
+        <p>Нажмите "Publish"</p>
+    </div>
+    
+    <div class="step">
+        <h3>4. Ваша конфигурация:</h3>
+        <code>
+const firebaseConfig = {
+    apiKey: "AIzaSyBHAnTe-bEl5AZIk5y2iiAQNHCJRcvuRzA",
+    authDomain: "sync-todo-app-e617f.firebaseapp.com",
+    projectId: "sync-todo-app-e617f",
+    storageBucket: "sync-todo-app-e617f.firebasestorage.app",
+    messagingSenderId: "1077327103318",
+    appId: "1:1077327103318:web:6b333882668ca2f26802f7",
+    measurementId: "G-9Y6RDHWVH8"
+};
+        </code>
+    </div>
+    
+    <div class="step">
+        <h3>5. Проверка:</h3>
+        <p>1. Откройте <a href="https://azizsabitov7-alt.github.io/Project-2/" target="_blank">ваше приложение</a></p>
+        <p>2. Нажмите "Войти через Google"</p>
+        <p>3. Если ошибка, проверьте консоль браузера (F12)</p>
+    </div>
+</body>
+</html>
