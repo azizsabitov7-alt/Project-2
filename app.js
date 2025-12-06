@@ -1,5 +1,3 @@
-// ПРОСТОЙ ИСПРАВЛЕННЫЙ КОД - ВСТАВЬТЕ ВЕСЬ ЭТОТ ФАЙЛ:
-
 // Конфигурация Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBHAnTe-bEl5AZIk5y2iiAQNHCJRcvuRzA",
@@ -18,357 +16,219 @@ let currentFilter = 'all';
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM загружен');
+    console.log('✅ DOM загружен');
     
     try {
         // Инициализируем Firebase
         firebase.initializeApp(firebaseConfig);
-        console.log('Firebase инициализирован');
+        console.log('✅ Firebase инициализирован');
     } catch (error) {
-        console.log('Firebase уже инициализирован или ошибка:', error);
+        console.log('ℹ️ Firebase уже инициализирован');
     }
     
     // Настройка обработчиков событий
     setupEventListeners();
     
-    // Проверяем, есть ли сохраненный пользователь
-    checkSavedUser();
+    // Проверяем аутентификацию
+    initAuth();
 });
 
-// Настройка всех обработчиков
+// Инициализация аутентификации
+function initAuth() {
+    firebase.auth().onAuthStateChanged((user) => {
+        console.log('🔄 Состояние аутентификации:', user ? user.email : 'Нет пользователя');
+        
+        if (user) {
+            currentUser = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName
+            };
+            
+            localStorage.setItem('todo_user', JSON.stringify(currentUser));
+            showUserInfo();
+            loadTasksFromFirebase();
+            
+        } else {
+            currentUser = null;
+            localStorage.removeItem('todo_user');
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('app-content').style.display = 'none';
+        }
+    });
+}
+
+// Настройка обработчиков
 function setupEventListeners() {
-    console.log('Настройка обработчиков...');
+    console.log('🛠️ Настройка обработчиков...');
     
     // 1. Кнопка "Добавить"
     const addButton = document.getElementById('add-task-btn');
     const taskInput = document.getElementById('new-task-input');
     
     if (addButton) {
+        console.log('✅ Кнопка "Добавить" найдена');
         addButton.addEventListener('click', addTask);
-        console.log('Кнопка "Добавить" найдена и настроена');
     } else {
-        console.error('Кнопка "Добавить" не найдена! ID: add-task-btn');
+        console.error('❌ Кнопка "Добавить" не найдена! Проверьте HTML');
     }
     
     if (taskInput) {
         taskInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addTask();
-            }
+            if (e.key === 'Enter') addTask();
         });
-        console.log('Поле ввода найдено и настроено');
     }
     
-    // 2. Кнопки входа
-    const googleBtn = document.getElementById('google-login-btn');
-    const localBtn = document.getElementById('local-mode-btn');
-    
-    if (googleBtn) {
-        googleBtn.addEventListener('click', signInWithGoogle);
-    }
-    
-    if (localBtn) {
-        localBtn.addEventListener('click', enableLocalMode);
-    }
-    
-    // 3. Фильтры
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
+    // 2. Кнопки фильтров
+    document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            // Убираем активный класс у всех
-            filterButtons.forEach(b => b.classList.remove('active'));
-            // Добавляем текущему
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentFilter = this.dataset.filter;
             renderTasks();
         });
     });
     
-    // 4. Очистка выполненных
+    // 3. Очистка выполненных
     const clearBtn = document.getElementById('clear-completed-btn');
     if (clearBtn) {
         clearBtn.addEventListener('click', clearCompletedTasks);
     }
     
-    // 5. Выход
+    // 4. Выход
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', signOut);
+        logoutBtn.addEventListener('click', () => firebase.auth().signOut());
     }
-}
-
-// Проверка сохраненного пользователя
-function checkSavedUser() {
-    const savedUser = localStorage.getItem('todo_user');
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-            console.log('Восстановлен пользователь:', currentUser.email);
-            showUserInfo();
-            loadTasks();
-        } catch (e) {
-            console.error('Ошибка восстановления пользователя:', e);
-        }
-    }
-}
-
-// Вход через Google
-function signInWithGoogle() {
-    console.log('Попытка входа через Google...');
-    
-    const provider = new firebase.auth.GoogleAuthProvider();
-    
-    firebase.auth().signInWithPopup(provider)
-        .then((result) => {
-            console.log('Успешный вход:', result.user.email);
-            currentUser = {
-                uid: result.user.uid,
-                email: result.user.email,
-                displayName: result.user.displayName
-            };
-            
-            // Сохраняем в localStorage
-            localStorage.setItem('todo_user', JSON.stringify(currentUser));
-            
-            showUserInfo();
-            loadTasks();
-            
-            showMessage('Успешный вход!', 'success');
-        })
-        .catch((error) => {
-            console.error('Ошибка входа:', error);
-            showMessage('Ошибка входа: ' + error.message, 'error');
-        });
-}
-
-// Локальный режим
-function enableLocalMode() {
-    console.log('Включение локального режима');
-    
-    currentUser = {
-        uid: 'local',
-        email: 'Локальный пользователь'
-    };
-    
-    // Показываем основной интерфейс
-    document.getElementById('app-content').style.display = 'block';
-    document.getElementById('auth-section').style.display = 'none';
-    
-    // Загружаем локальные задачи
-    loadLocalTasks();
-    
-    showMessage('Локальный режим активирован', 'info');
 }
 
 // Показать информацию пользователя
 function showUserInfo() {
-    if (!currentUser) return;
+    console.log('👤 Показываем информацию пользователя');
     
     const userEmail = document.getElementById('user-email');
     const userInfo = document.getElementById('user-info');
     const appContent = document.getElementById('app-content');
     const authSection = document.getElementById('auth-section');
     
-    if (userEmail) userEmail.textContent = currentUser.email;
+    if (userEmail) {
+        userEmail.textContent = currentUser.email;
+        console.log('✅ Email установлен:', currentUser.email);
+    }
+    
     if (userInfo) userInfo.style.display = 'block';
     if (appContent) appContent.style.display = 'block';
     if (authSection) authSection.style.display = 'none';
+    
+    console.log('✅ Интерфейс пользователя показан');
 }
 
-// Выход
-function signOut() {
-    if (firebase.auth) {
-        firebase.auth().signOut();
+// Загрузить задачи из Firebase
+function loadTasksFromFirebase() {
+    if (!currentUser) {
+        console.log('⚠️ Нет пользователя для загрузки задач');
+        return;
     }
-    currentUser = null;
-    localStorage.removeItem('todo_user');
     
-    document.getElementById('app-content').style.display = 'none';
-    document.getElementById('auth-section').style.display = 'block';
+    console.log('📥 Загрузка задач из Firebase для:', currentUser.uid);
     
-    showMessage('Вы вышли', 'info');
+    // Подписываемся на обновления в реальном времени
+    firebase.firestore()
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('tasks')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot((snapshot) => {
+            console.log('🔥 Получены данные из Firebase:', snapshot.size, 'задач');
+            
+            tasks = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                tasks.push({
+                    id: doc.id,
+                    text: data.text || '',
+                    completed: data.completed || false,
+                    createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+                });
+            });
+            
+            console.log('✅ Задачи загружены:', tasks);
+            renderTasks();
+            updateStats();
+            
+        }, (error) => {
+            console.error('❌ Ошибка загрузки из Firebase:', error);
+            showMessage('Ошибка загрузки задач', 'error');
+        });
 }
 
-// ДОБАВИТЬ ЗАДАЧУ - ЭТО ГЛАВНАЯ ФУНКЦИЯ
-function addTask() {
-    console.log('Функция addTask вызвана');
+// ДОБАВИТЬ ЗАДАЧУ
+async function addTask() {
+    console.log('🎯 Функция addTask вызвана');
     
     const input = document.getElementById('new-task-input');
     if (!input) {
-        console.error('Поле ввода не найдено!');
+        console.error('❌ Поле ввода не найдено!');
         return;
     }
     
     const text = input.value.trim();
-    console.log('Текст задачи:', text);
+    console.log('📝 Текст задачи:', text);
     
     if (!text) {
         showMessage('Введите текст задачи!', 'warning');
         return;
     }
     
-    // Создаем задачу
-    const newTask = {
-        id: Date.now().toString(),
-        text: text,
-        completed: false,
-        createdAt: new Date().toISOString()
-    };
-    
-    console.log('Создана задача:', newTask);
-    
-    // Добавляем в массив
-    tasks.unshift(newTask);
-    
-    // Сохраняем
-    saveTasks();
-    
-    // Отображаем
-    renderTasks();
-    updateStats();
-    
-    // Очищаем поле ввода
-    input.value = '';
-    input.focus();
-    
-    showMessage('Задача добавлена!', 'success');
-}
-
-// Загрузить задачи
-function loadTasks() {
-    if (currentUser && currentUser.uid !== 'local') {
-        loadTasksFromFirebase();
-    } else {
-        loadLocalTasks();
-    }
-}
-
-// Загрузить из Firebase
-function loadTasksFromFirebase() {
-    if (!currentUser || !firebase.firestore) return;
-    
-    console.log('Загрузка из Firebase для пользователя:', currentUser.uid);
-    
-    firebase.firestore()
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('tasks')
-        .orderBy('createdAt', 'desc')
-        .get()
-        .then(snapshot => {
-            tasks = [];
-            snapshot.forEach(doc => {
-                tasks.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
-            renderTasks();
-            updateStats();
-        })
-        .catch(error => {
-            console.error('Ошибка загрузки из Firebase:', error);
-            loadLocalTasks();
-        });
-}
-
-// Загрузить локальные задачи
-function loadLocalTasks() {
-    const saved = localStorage.getItem('local_tasks');
-    if (saved) {
-        try {
-            tasks = JSON.parse(saved);
-            console.log('Загружено локальных задач:', tasks.length);
-        } catch (e) {
-            console.error('Ошибка загрузки локальных задач:', e);
-            tasks = [];
-        }
-    } else {
-        tasks = [];
-    }
-    renderTasks();
-    updateStats();
-}
-
-// Сохранить задачи
-function saveTasks() {
-    if (currentUser && currentUser.uid !== 'local') {
-        saveToFirebase();
-    } else {
-        saveLocalTasks();
-    }
-}
-
-// Сохранить в Firebase
-function saveToFirebase() {
-    // Для Firebase нужно сохранять каждую задачу отдельно
-    // Пока просто сохраняем локально
-    saveLocalTasks();
-}
-
-// Сохранить локально
-function saveLocalTasks() {
-    localStorage.setItem('local_tasks', JSON.stringify(tasks));
-    console.log('Задачи сохранены локально:', tasks.length);
-}
-
-// Переключить статус задачи
-function toggleTask(taskId) {
-    console.log('Переключение задачи:', taskId);
-    
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    
-    task.completed = !task.completed;
-    saveTasks();
-    renderTasks();
-    updateStats();
-}
-
-// Удалить задачу
-function deleteTask(taskId) {
-    if (!confirm('Удалить эту задачу?')) return;
-    
-    tasks = tasks.filter(t => t.id !== taskId);
-    saveTasks();
-    renderTasks();
-    updateStats();
-    
-    showMessage('Задача удалена', 'success');
-}
-
-// Очистить выполненные
-function clearCompletedTasks() {
-    const completedCount = tasks.filter(t => t.completed).length;
-    
-    if (completedCount === 0) {
-        showMessage('Нет выполненных задач', 'info');
+    if (!currentUser) {
+        console.error('❌ Нет пользователя!');
         return;
     }
     
-    if (!confirm(`Удалить ${completedCount} выполненных задач?`)) return;
+    const taskData = {
+        text: text,
+        completed: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
     
-    tasks = tasks.filter(t => !t.completed);
-    saveTasks();
-    renderTasks();
-    updateStats();
-    
-    showMessage(`Удалено ${completedCount} задач`, 'success');
+    try {
+        console.log('💾 Сохранение задачи в Firebase...');
+        
+        // Сохраняем в Firebase
+        await firebase.firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('tasks')
+            .add(taskData);
+        
+        console.log('✅ Задача сохранена в Firebase');
+        
+        // Очищаем поле ввода
+        input.value = '';
+        input.focus();
+        
+        showMessage('Задача добавлена!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Ошибка сохранения:', error);
+        showMessage('Ошибка при добавлении задачи: ' + error.message, 'error');
+    }
 }
 
-// ОТОБРАЗИТЬ ЗАДАЧИ - ВАЖНАЯ ФУНКЦИЯ
+// ОТОБРАЗИТЬ ЗАДАЧИ
 function renderTasks() {
-    console.log('renderTasks вызван, всего задач:', tasks.length);
+    console.log('🎨 renderTasks вызван, всего задач:', tasks.length);
     
     const container = document.getElementById('tasks-container');
     if (!container) {
-        console.error('Контейнер задач не найден! ID: tasks-container');
+        console.error('❌ Контейнер задач не найден!');
         return;
     }
     
-    // Если задач нет
     if (tasks.length === 0) {
         container.innerHTML = '<p class="empty-state">Задач пока нет. Добавьте первую задачу!</p>';
+        console.log('📭 Нет задач для отображения');
         return;
     }
     
@@ -380,32 +240,135 @@ function renderTasks() {
         filteredTasks = tasks.filter(t => t.completed);
     }
     
-    // Если после фильтрации нет задач
-    if (filteredTasks.length === 0) {
-        container.innerHTML = `<p class="empty-state">Нет задач для фильтра "${currentFilter}"</p>`;
-        return;
-    }
+    console.log('🔍 После фильтрации:', filteredTasks.length, 'задач');
     
     // Генерируем HTML
     const tasksHTML = filteredTasks.map(task => `
-        <div class="task-item">
+        <div class="task-item" style="
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        ">
             <input type="checkbox" 
-                   class="task-checkbox" 
+                   style="width: 20px; height: 20px;"
                    ${task.completed ? 'checked' : ''}
                    onchange="toggleTask('${task.id}')">
-            <span class="task-text ${task.completed ? 'completed' : ''}">
-                ${task.text}
+            <span style="
+                flex: 1;
+                ${task.completed ? 'text-decoration: line-through; color: #6c757d;' : ''}
+            ">
+                ${task.text || 'Без названия'}
             </span>
-            <div class="task-actions">
-                <button class="task-btn delete" onclick="deleteTask('${task.id}')" title="Удалить">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
+            <button onclick="deleteTask('${task.id}')" style="
+                background: #dc3545;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+            ">
+                Удалить
+            </button>
         </div>
     `).join('');
     
     container.innerHTML = tasksHTML;
-    console.log('Задачи отображены:', filteredTasks.length);
+    console.log('✅ Задачи отображены');
+}
+
+// Переключить статус задачи
+async function toggleTask(taskId) {
+    console.log('🔄 Переключение задачи:', taskId);
+    
+    if (!currentUser) return;
+    
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const newCompleted = !task.completed;
+    
+    try {
+        await firebase.firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('tasks')
+            .doc(taskId)
+            .update({
+                completed: newCompleted,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        
+        console.log('✅ Статус задачи обновлен в Firebase');
+        
+    } catch (error) {
+        console.error('❌ Ошибка обновления:', error);
+        showMessage('Ошибка обновления задачи', 'error');
+    }
+}
+
+// Удалить задачу
+async function deleteTask(taskId) {
+    console.log('🗑️ Удаление задачи:', taskId);
+    
+    if (!confirm('Удалить эту задачу?')) return;
+    
+    if (!currentUser) return;
+    
+    try {
+        await firebase.firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('tasks')
+            .doc(taskId)
+            .delete();
+        
+        console.log('✅ Задача удалена из Firebase');
+        showMessage('Задача удалена', 'success');
+        
+    } catch (error) {
+        console.error('❌ Ошибка удаления:', error);
+        showMessage('Ошибка удаления задачи', 'error');
+    }
+}
+
+// Очистить выполненные
+async function clearCompletedTasks() {
+    console.log('🧹 Очистка выполненных задач');
+    
+    const completedTasks = tasks.filter(t => t.completed);
+    if (completedTasks.length === 0) {
+        showMessage('Нет выполненных задач', 'info');
+        return;
+    }
+    
+    if (!confirm(`Удалить ${completedTasks.length} выполненных задач?`)) return;
+    
+    if (!currentUser) return;
+    
+    try {
+        const batch = firebase.firestore().batch();
+        completedTasks.forEach(task => {
+            const taskRef = firebase.firestore()
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('tasks')
+                .doc(task.id);
+            batch.delete(taskRef);
+        });
+        
+        await batch.commit();
+        console.log(`✅ Удалено ${completedTasks.length} выполненных задач`);
+        showMessage(`Удалено ${completedTasks.length} задач`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Ошибка очистки:', error);
+        showMessage('Ошибка при удалении задач', 'error');
+    }
 }
 
 // Обновить статистику
@@ -416,38 +379,51 @@ function updateStats() {
     const totalEl = document.getElementById('total-tasks');
     const completedEl = document.getElementById('completed-tasks');
     
-    if (totalEl) totalEl.textContent = total;
-    if (completedEl) completedEl.textContent = completed;
+    if (totalEl) {
+        totalEl.textContent = total;
+        console.log('📊 Всего задач:', total);
+    }
+    
+    if (completedEl) {
+        completedEl.textContent = completed;
+        console.log('✅ Выполнено:', completed);
+    }
 }
 
 // Показать сообщение
 function showMessage(text, type = 'info') {
-    console.log('Сообщение:', text);
+    console.log(`💬 ${type.toUpperCase()}: ${text}`);
     
-    // Простой alert для тестирования
-    alert(text);
-    
-    // Или можно раскомментировать для красивого уведомления:
-    /*
+    // Создаем уведомление
     const notification = document.createElement('div');
     notification.textContent = text;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        padding: 15px;
-        background: ${type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3'};
+        padding: 15px 25px;
+        border-radius: 8px;
         color: white;
-        border-radius: 5px;
+        font-weight: 500;
         z-index: 1000;
+        animation: slideIn 0.3s ease;
+        background: ${type === 'error' ? '#dc3545' : 
+                    type === 'success' ? '#28a745' : 
+                    type === 'warning' ? '#ffc107' : '#17a2b8'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     `;
+    
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-    */
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
-// Сделать функции глобальными
+// Глобальные функции
 window.toggleTask = toggleTask;
 window.deleteTask = deleteTask;
 
-console.log('app.js загружен и готов!');
+console.log('🚀 app.js загружен и готов к работе!');
