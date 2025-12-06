@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App - Рабочая версия</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Стили -->
+    <style>
+        /* ОСНОВНЫЕ СТИЛИ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        h1 {
+            color: #2575fc;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        /* СЕКЦИЯ ВХОДА */
+        .login-section {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        .login-section h2 {
+            color: #2575fc;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .login-section p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        
+        /* КНОПКИ */
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin: 10px;
+            font-weight: 500;
+        }
+        
+        .btn-google {
+            background: #4285F4;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 250px;
+        }
+        
+        .btn-google:hover {
+            background: #3367D6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
+        }
+        
+        .btn-local {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-local:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        /* ИНФОРМАЦИЯ */
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: left;
+            border-left: 4px solid #2575fc;
+        }
+        
+        .info-box h3 {
+            color: #2575fc;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-box code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #d63384;
+        }
+        
+        /* ФУТЕР */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* УВЕДОМЛЕНИЯ */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            z-index: 10000;
+            animation: slideIn 0.3s, slideOut 0.3s 2s;
+            display: none;
+        }
+        
+        .notification.success {
+            background: #28a745;
+        }
+        
+        .notification.error {
+            background: #dc3545;
+        }
+        
+        .notification.info {
+            background: #17a2b8;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* ПРИЛОЖЕНИЕ */
+        .app-content {
+            display: none;
+        }
+        
+        .user-info {
+            background: #e7f1ff;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        #task-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px 0 0 10px;
+            font-size: 1rem;
+        }
+        
+        #add-task {
+            background: #2575fc;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 0 10px 10px 0;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .task-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+        
+        .task-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid #2575fc;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .task-item.completed {
+            opacity: 0.7;
+            border-left-color: #28a745;
+        }
+        
+        .task-text {
+            flex: 1;
+        }
+        
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #666;
+        }
+        
+        /* ОТЛАДКА */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tasks"></i> Синхронизированный ToDo</h1>
+            <p class="subtitle">Ваши задачи везде с вами</p>
+        </header>
+        
+        <!-- Секция входа -->
+        <div id="login-section" class="login-section">
+            <h2><i class="fas fa-cloud"></i> Войдите для синхронизации</h2>
+            <p>Войдите с помощью Google чтобы ваши задачи синхронизировались на всех устройствах</p>
+            
+            <button id="google-login" class="btn btn-google">
+                <i class="fab fa-google"></i> Войти через Google
+            </button>
+            
+            <div class="info-box">
+                <h3><i class="fas fa-info-circle"></i> Информация о проекте:</h3>
+                <p>Project ID: <code>sync-todo-app-e617f</code></p>
+                <p>Статус: <span id="firebase-status">Проверка...</span></p>
+            </div>
+            
+            <button id="continue-local" class="btn btn-local">
+                <i class="fas fa-desktop"></i> Продолжить без входа (локально)
+            </button>
+        </div>
+        
+        <!-- Основное приложение -->
+        <div id="app-content" class="app-content">
+            <div id="user-info" class="user-info" style="display: none;">
+                <i class="fas fa-user"></i>
+                <span id="user-email"></span>
+                <button id="logout-btn" class="btn-local" style="margin-left: auto; padding: 5px 10px; font-size: 0.9rem;">
+                    Выйти
+                </button>
+            </div>
+            
+            <h2><i class="fas fa-list-check"></i> Мои задачи</h2>
+            
+            <div class="input-group">
+                <input type="text" id="task-input" placeholder="Что нужно сделать?">
+                <button id="add-task">
+                    <i class="fas fa-plus"></i> Добавить
+                </button>
+            </div>
+            
+            <ul class="task-list" id="task-list">
+                <li class="empty-state" style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: #ddd;"></i>
+                    <h3>Список задач пуст</h3>
+                    <p>Добавьте свою первую задачу!</p>
+                </li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>Синхронизированное приложение &copy; 2023 | Firebase Project: sync-todo-app-e617f</p>
+            <p style="font-size: 0.8rem; margin-top: 5px;">Используйте один Google аккаунт на всех устройствах</p>
+        </footer>
+    </div>
+    
+    <!-- Панель отладки -->
+    <div class="debug-panel">
+        <div>Статус: <span id="debug-status">Загрузка...</span></div>
+        <button onclick="showDebugInfo()" style="margin-top: 5px; padding: 3px 6px; font-size: 10px;">
+            Отладка
+        </button>
+    </div>
+    
+    <!-- Уведомления -->
+    <div id="notification" class="notification"></div>
+    
+    <!-- ВСТРАИВАЕМЫЙ JavaScript -->
+    <script>
+        // === ОСНОВНОЙ КОД ПРИЛОЖЕНИЯ ===
+        
+        console.log("=== ЗАПУСК ПРИЛОЖЕНИЯ ===");
+        console.log("URL:", window.location.href);
+        console.log("Время:", new Date().toLocaleTimeString());
+        
+        // Глобальные переменные
+        let tasks = [];
+        let currentUser = null;
+        
+        // DOM элементы
+        let loginSection, appContent, googleLoginBtn, continueLocalBtn;
+        let logoutBtn, userInfo, userEmail, taskInput, addTaskBtn, taskList;
+        
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM загружен, инициализируем...");
+            
+            // Находим все элементы
+            initElements();
+            
+            // Проверяем Firebase
+            checkFirebase();
+            
+            // Настраиваем обработчики
+            setupEventListeners();
+            
+            // Загружаем локальные задачи
+            loadLocalTasks();
+            
+            updateDebugStatus("Готово");
+            console.log("Инициализация завершена");
+        });
+        
+        function initElements() {
+            console.log("Поиск элементов DOM...");
+            
+            loginSection = document.getElementById('login-section');
+            appContent = document.getElementById('app-content');
+            googleLoginBtn = document.getElementById('google-login');
+            continueLocalBtn = document.getElementById('continue-local');
+            logoutBtn = document.getElementById('logout-btn');
+            userInfo = document.getElementById('user-info');
+            userEmail = document.getElementById('user-email');
+            taskInput = document.getElementById('task-input');
+            addTaskBtn = document.getElementById('add-task');
+            taskList = document.getElementById('task-list');
+            
+            console.log("Найдены элементы:", {
+                loginSection: !!loginSection,
+                googleLoginBtn: !!googleLoginBtn,
+                continueLocalBtn: !!continueLocalBtn,
+                appContent: !!appContent
+            });
+            
+            // Если кнопка Google не найдена, создаем заново
+            if (!googleLoginBtn) {
+                console.error("Кнопка Google не найдена! Создаем заново...");
+                const btn = document.createElement('button');
+                btn.id = 'google-login';
+                btn.className = 'btn btn-google';
+                btn.innerHTML = '<i class="fab fa-google"></i> Войти через Google';
+                loginSection.appendChild(btn);
+                googleLoginBtn = btn;
+            }
+        }
+        
+        function checkFirebase() {
+            const statusEl = document.getElementById('firebase-status');
+            
+            if (typeof firebase === 'undefined') {
+                console.error("Firebase SDK не загружен!");
+                if (statusEl) statusEl.innerHTML = '<span style="color: #dc3545;">❌ Не загружен</span>';
+                showNotification("Firebase не загружен. Работаем локально.", "error");
+                return false;
+            }
+            
+            console.log("Firebase SDK загружен, версия:", firebase.SDK_VERSION);
+            
+            try {
+                // Конфигурация Firebase
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBHAnTe-bEl5AZIk5y2iiAQNHCJRcvuRzA",
+                    authDomain: "sync-todo-app-e617f.firebaseapp.com",
+                    projectId: "sync-todo-app-e617f",
+                    storageBucket: "sync-todo-app-e617f.firebasestorage.app",
+                    messagingSenderId: "1077327103318",
+                    appId: "1:1077327103318:web:6b333882668ca2f26802f7"
+                };
+                
+                // Инициализируем Firebase
+                firebase.initializeApp(firebaseConfig);
+                console.log("Firebase инициализирован успешно!");
+                
+                if (statusEl) statusEl.innerHTML = '<span style="color: #28a745;">✅ Подключен</span>';
+                
+                // Настраиваем слушатель аутентификации
+                setupAuthListener();
+                
+                return true;
+                
+            } catch (error) {
+                console.error("Ошибка инициализации Firebase:", error);
+                if (statusEl) statusEl.innerHTML = '<span style="color: #dc3545;">❌ Ошибка: ' + error.message + '</span>';
+                showNotification("Ошибка Firebase: " + error.message, "error");
+                return false;
+            }
+        }
+        
+        function setupAuthListener() {
+            if (!firebase.auth) {
+                console.error("Firebase Auth не доступен");
+                return;
+            }
+            
+            const auth = firebase.auth();
+            
+            auth.onAuthStateChanged(function(user) {
+                console.log("Статус аутентификации изменен:", user ? "Вошли" : "Вышли");
+                
+                if (user) {
+                    currentUser = user;
+                    console.log("Пользователь:", user.email);
+                    showApp();
+                    showNotification("Привет, " + (user.displayName || user.email) + "!", "success");
+                } else {
+                    currentUser = null;
+                    showLogin();
+                }
+            });
+        }
+        
+        function setupEventListeners() {
+            console.log("Настройка обработчиков событий...");
+            
+            // 1. Кнопка Google входа
+            if (googleLoginBtn) {
+                googleLoginBtn.addEventListener('click', function() {
+                    console.log("Кнопка Google нажата!");
+                    showNotification("Начинаем вход через Google...", "info");
+                    signInWithGoogle();
+                });
+            } else {
+                console.error("Кнопка Google не найдена для добавления обработчика!");
+            }
+            
+            // 2. Кнопка локальной работы
+            if (continueLocalBtn) {
+                continueLocalBtn.addEventListener('click', function() {
+                    console.log("Локальный режим активирован");
+                    showApp();
+                    showNotification("Работаем локально. Данные сохраняются в вашем браузере.", "info");
+                });
+            }
+            
+            // 3. Выход
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    if (firebase.auth && currentUser) {
+                        firebase.auth().signOut()
+                            .then(() => {
+                                showNotification("Вы вышли из системы", "info");
+                            })
+                            .catch(error => {
+                                console.error("Ошибка выхода:", error);
+                            });
+                    } else {
+                        showLogin();
+                    }
+                });
+            }
+            
+            // 4. Добавление задачи
+            if (addTaskBtn && taskInput) {
+                addTaskBtn.addEventListener('click', addTask);
+                taskInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') addTask();
+                });
+            }
+        }
+        
+        // ВХОД ЧЕРЕЗ GOOGLE
+        async function signInWithGoogle() {
+            console.log("Запуск входа через Google...");
+            
+            try {
+                // Проверяем Firebase
+                if (!firebase.auth) {
+                    throw new Error("Firebase Auth не доступен");
+                }
+                
+                const auth = firebase.auth();
+                const provider = new firebase.auth.GoogleAuthProvider();
+                
+                // Добавляем scope
+                provider.addScope('email');
+                provider.addScope('profile');
+                
+                console.log("Открываем popup...");
+                
+                // Меняем текст кнопки
+                const originalText = googleLoginBtn.innerHTML;
+                googleLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Вход...';
+                googleLoginBtn.disabled = true;
+                
+                // Пытаемся войти
+                const result = await auth.signInWithPopup(provider);
+                console.log("Успешный вход!", result.user.email);
+                
+                // Возвращаем кнопку
+                googleLoginBtn.innerHTML = originalText;
+                googleLoginBtn.disabled = false;
+                
+            } catch (error) {
+                console.error("Ошибка входа:", error);
+                
+                // Восстанавливаем кнопку
+                if (googleLoginBtn) {
+                    googleLoginBtn.innerHTML = '<i class="fab fa-google"></i> Войти через Google';
+                    googleLoginBtn.disabled = false;
+                }
+                
+                // Показываем ошибку
+                let errorMessage = "Ошибка входа: " + (error.message || error.code);
+                
+                if (error.code === 'auth/popup-blocked') {
+                    errorMessage = "Браузер заблокировал всплывающее окно. Разрешите всплывающие окна для этого сайта.";
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = "Вы закрыли окно входа. Попробуйте снова.";
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    errorMessage = "Этот домен не авторизован. Откройте http://localhost:8080";
+                }
+                
+                showNotification(errorMessage, "error");
+            }
+        }
+        
+        // УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ
+        function showLogin() {
+            console.log("Показываем экран входа");
+            if (loginSection) loginSection.style.display = 'block';
+            if (appContent) appContent.style.display = 'none';
+        }
+        
+        function showApp() {
+            console.log("Показываем приложение");
+            if (loginSection) loginSection.style.display = 'none';
+            if (appContent) appContent.style.display = 'block';
+            
+            // Обновляем информацию о пользователе
+            if (currentUser) {
+                if (userInfo) {
+                    userInfo.style.display = 'flex';
+                }
+                if (userEmail) {
+                    userEmail.textContent = currentUser.email;
+                }
+            } else {
+                if (userInfo) {
+                    userInfo.style.display = 'none';
+                }
+            }
+            
+            // Рендерим задачи
+            renderTasks();
+        }
+        
+        // РАБОТА С ЗАДАЧАМИ
+        function addTask() {
+            const text = taskInput.value.trim();
+            
+            if (!text) {
+                showNotification("Введите текст задачи", "error");
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.push(newTask);
+            taskInput.value = '';
+            
+            // Сохраняем
+            saveLocalTasks();
+            
+            // Показываем
+            renderTasks();
+            
+            showNotification("Задача добавлена", "success");
+        }
+        
+        function renderTasks() {
+            if (!taskList) return;
+            
+            taskList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                taskList.innerHTML = `
+                    <li class="empty-state" style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: #ddd;"></i>
+                        <h3>Список задач пуст</h3>
+                        <p>Добавьте свою первую задачу!</p>
+                    </li>
+                `;
+                return;
+            }
+            
+            tasks.forEach(task => {
+                const taskItem = document.createElement('li');
+                taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+                
+                taskItem.innerHTML = `
+                    <i class="fas fa-${task.completed ? 'check-circle' : 'circle'}" 
+                       style="color: ${task.completed ? '#28a745' : '#2575fc'};"></i>
+                    <div class="task-text">${task.text}</div>
+                    <div style="margin-left: auto; display: flex; gap: 10px;">
+                        <button class="complete-btn" style="background: none; border: none; cursor: pointer; color: #28a745;">
+                            <i class="fas fa-${task.completed ? 'redo' : 'check'}"></i>
+                        </button>
+                        <button class="delete-btn" style="background: none; border: none; cursor: pointer; color: #dc3545;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // Обработчики
+                taskItem.querySelector('.complete-btn').addEventListener('click', () => {
+                    task.completed = !task.completed;
+                    saveLocalTasks();
+                    renderTasks();
+                });
+                
+                taskItem.querySelector('.delete-btn').addEventListener('click', () => {
+                    if (confirm("Удалить задачу?")) {
+                        tasks = tasks.filter(t => t.id !== task.id);
+                        saveLocalTasks();
+                        renderTasks();
+                        showNotification("Задача удалена", "info");
+                    }
+                });
+                
+                taskList.appendChild(taskItem);
+            });
+        }
+        
+        // LOCALSTORAGE
+        function saveLocalTasks() {
+            try {
+                localStorage.setItem('todo_tasks', JSON.stringify(tasks));
+            } catch (error) {
+                console.error("Ошибка сохранения:", error);
+            }
+        }
+        
+        function loadLocalTasks() {
+            try {
+                const saved = localStorage.getItem('todo_tasks');
+                if (saved) {
+                    tasks = JSON.parse(saved);
+                    console.log("Загружено задач:", tasks.length);
+                } else {
+                    tasks = [
+                        { id: 1, text: 'Пример задачи 1', completed: false, createdAt: new Date().toISOString() },
+                        { id: 2, text: 'Пример задачи 2', completed: true, createdAt: new Date().toISOString() }
+                    ];
+                    saveLocalTasks();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки:", error);
+                tasks = [];
+            }
+        }
+        
+        // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        function showNotification(message, type = "info") {
+            const notification = document.getElementById('notification');
+            if (!notification) return;
+            
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        function updateDebugStatus(status) {
+            const el = document.getElementById('debug-status');
+            if (el) el.textContent = status;
+        }
+        
+        function showDebugInfo() {
+            console.log("=== ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ===");
+            console.log("Задачи:", tasks.length);
+            console.log("Пользователь:", currentUser ? currentUser.email : "нет");
+            console.log("LocalStorage:", localStorage.getItem('todo_tasks') ? "есть данные" : "пусто");
+            console.log("Firebase:", typeof firebase !== 'undefined' ? "загружен" : "нет");
+            console.log("URL:", window.location.href);
+            
+            alert(
+                "Отладочная информация:\n\n" +
+                "Задач: " + tasks.length + "\n" +
+                "Пользователь: " + (currentUser ? currentUser.email : "нет") + "\n" +
+                "Firebase: " + (typeof firebase !== 'undefined' ? "загружен" : "нет") + "\n" +
+                "URL: " + window.location.href
+            );
+        }
+        
+        // Тестируем кнопки сразу
+        console.log("Тест: добавляем обработчики для кнопок...");
+        
+        // Добавляем глобальные функции для теста
+        window.testGoogleLogin = function() {
+            console.log("Тест кнопки Google");
+            showNotification("Кнопка Google работает!", "success");
+        };
+        
+        window.testLocalLogin = function() {
+            console.log("Тест локального входа");
+            showApp();
+            showNotification("Локальный режим работает!", "success");
+        };
+        
+        // Принудительно показываем кнопки
+        setTimeout(function() {
+            console.log("Принудительная проверка кнопок...");
+            
+            if (googleLoginBtn) {
+                console.log("Кнопка Google найдена, добавляем тестовый обработчик");
+                googleLoginBtn.onclick = function() {
+                    console.log("Тест: Кнопка Google нажата!");
+                    showNotification("Кнопка работает! Проверяем Firebase...", "success");
+                    signInWithGoogle();
+                };
+            }
+            
+            if (continueLocalBtn) {
+                continueLocalBtn.onclick = function() {
+                    console.log("Тест: Локальная кнопка нажата!");
+                    showApp();
+                    showNotification("Локальный режим активирован!", "success");
+                };
+            }
+        }, 1000);
+        
+        console.log("=== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА ===");
+    </script>
+</body>
+</html>
