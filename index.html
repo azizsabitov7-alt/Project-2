@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo Sync - Введите код</title>
+    <title>Todo Sync - Двусторонняя синхронизация</title>
     <style>
         * {
             margin: 0;
@@ -24,7 +24,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 20px;
-            padding: 30px;
+            padding: 25px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
@@ -32,74 +32,52 @@
             text-align: center;
             color: #2c3e50;
             margin-bottom: 10px;
+            font-size: 28px;
         }
         
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        
-        /* Блок кода */
-        .code-section {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
+        /* Секция подключения */
+        .connect-section {
             text-align: center;
         }
         
-        .code-section h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        
-        /* Поле для ввода кода - БОЛЬШОЕ и заметное */
-        .code-input-container {
-            margin: 20px 0;
-        }
-        
-        .code-input-label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
+        .sync-code {
+            font-size: 36px;
             font-weight: bold;
+            color: #1890ff;
+            background: #e6f7ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 3px dashed #1890ff;
+            letter-spacing: 5px;
+            font-family: 'Courier New', monospace;
         }
         
         .code-input {
             width: 100%;
-            padding: 25px;
-            font-size: 28px;
+            padding: 20px;
+            font-size: 24px;
             text-align: center;
             border: 3px solid #ddd;
-            border-radius: 15px;
-            margin: 10px 0;
-            letter-spacing: 10px;
+            border-radius: 12px;
+            margin: 15px 0;
+            letter-spacing: 8px;
             font-family: 'Courier New', monospace;
-            font-weight: bold;
             color: #1890ff;
+            font-weight: bold;
         }
         
-        .code-input:focus {
-            outline: none;
-            border-color: #52c41a;
-            box-shadow: 0 0 0 4px rgba(82, 196, 26, 0.3);
-        }
-        
-        /* Кнопки */
         .btn {
             display: block;
             width: 100%;
-            padding: 22px;
+            padding: 20px;
+            margin: 10px 0;
             border: none;
             border-radius: 12px;
             font-size: 20px;
             font-weight: bold;
             cursor: pointer;
-            margin: 15px 0;
             transition: all 0.3s;
-            text-align: center;
         }
         
         .btn-primary {
@@ -107,19 +85,9 @@
             color: white;
         }
         
-        .btn-primary:hover, .btn-primary:active {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(24, 144, 255, 0.4);
-        }
-        
         .btn-success {
             background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
             color: white;
-        }
-        
-        .btn-success:hover, .btn-success:active {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(82, 196, 26, 0.4);
         }
         
         .btn-secondary {
@@ -128,53 +96,29 @@
             border: 2px solid #ddd;
         }
         
-        /* QR код */
-        .qrcode-container {
-            margin: 25px 0;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
-        }
-        
-        #qrcode {
-            margin: 0 auto;
-            width: 200px;
-            height: 200px;
-        }
-        
-        /* Инструкция */
-        .instructions {
-            background: #fff7e6;
-            border: 2px solid #ffd591;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 25px 0;
-        }
-        
-        .instructions ol {
-            margin-left: 20px;
-            color: #5d6d7e;
-        }
-        
-        .instructions li {
-            margin: 10px 0;
-            padding-left: 10px;
-        }
-        
         /* Основное приложение */
-        #app-content {
+        #app {
             display: none;
-            margin-top: 30px;
         }
         
-        .task-form {
+        .sync-status {
+            background: #f6ffed;
+            border: 2px solid #b7eb8f;
+            color: #52c41a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .add-form {
             display: flex;
             gap: 10px;
             margin: 20px 0;
         }
         
-        #task-input {
+        #taskInput {
             flex: 1;
             padding: 18px;
             border: 2px solid #ddd;
@@ -182,30 +126,70 @@
             font-size: 18px;
         }
         
+        #addBtn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 0 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .tasks-container {
+            min-height: 200px;
+        }
+        
         .task-item {
-            padding: 18px;
-            margin: 10px 0;
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 10px;
+            padding: 18px;
+            margin: 12px 0;
             display: flex;
             align-items: center;
             gap: 15px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .task-checkbox {
             width: 24px;
             height: 24px;
+            cursor: pointer;
+            accent-color: #52c41a;
         }
         
         .task-text {
             flex: 1;
             font-size: 18px;
+            word-break: break-word;
         }
         
         .task-text.completed {
             text-decoration: line-through;
             color: #888;
+        }
+        
+        .task-delete {
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
         }
         
         .stats {
@@ -214,212 +198,207 @@
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px solid #eee;
-        }
-        
-        /* Сообщения */
-        .message {
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            text-align: center;
             font-weight: bold;
         }
         
-        .message.success {
-            background: #f6ffed;
-            border: 2px solid #b7eb8f;
-            color: #52c41a;
-        }
-        
-        .message.error {
-            background: #fff2f0;
-            border: 2px solid #ffccc7;
-            color: #ff4d4f;
-        }
-        
-        /* Для мобильных */
+        /* Адаптивность для мобильных */
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
             }
             
+            .sync-code {
+                font-size: 28px;
+                padding: 15px;
+            }
+            
             .code-input {
-                padding: 20px;
-                font-size: 24px;
-                letter-spacing: 8px;
+                font-size: 20px;
+                padding: 15px;
             }
             
             .btn {
-                padding: 20px;
+                padding: 18px;
                 font-size: 18px;
             }
             
-            .task-form {
+            .add-form {
                 flex-direction: column;
+            }
+            
+            #addBtn {
+                padding: 15px;
+                width: 100%;
+            }
+            
+            .task-item {
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📱↔️💻 Todo Sync</h1>
-        <p class="subtitle">Синхронизация между телефоном и компьютером</p>
-        
-        <!-- ШАГ 1: ВВОД КОДА (всегда видно сначала) -->
-        <div id="connect-section">
-            <div class="code-section">
-                <h2>🔗 Шаг 1: Подключите устройства</h2>
-                
-                <div class="message" id="status-message">
-                    Введите код с другого устройства или создайте новый
+        <!-- ЭКРАН ПОДКЛЮЧЕНИЯ -->
+        <div id="connectScreen">
+            <h1>📱↔️💻 Синхронизация заметок</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                Создавайте заметки на любом устройстве и видите их на всех
+            </p>
+            
+            <div class="connect-section">
+                <!-- Код для первого устройства -->
+                <div id="createSection">
+                    <h3>🎯 На ПЕРВОМ устройстве:</h3>
+                    <div class="sync-code" id="newCode">--- ---</div>
+                    <button class="btn btn-primary" onclick="createNewRoom()">
+                        🎲 Создать комнату
+                    </button>
+                    <p style="margin-top: 15px; color: #666;">
+                        Запомните этот код и введите его на втором устройстве
+                    </p>
                 </div>
                 
-                <!-- Вариант A: Ввести существующий код -->
-                <div class="code-input-container">
-                    <label class="code-input-label">Если у вас уже есть код:</label>
+                <!-- Поле для ввода кода на втором устройстве -->
+                <div id="joinSection" style="display: none; margin-top: 30px;">
+                    <h3>📱 На ВТОРОМ устройстве:</h3>
                     <input type="text" 
-                           id="code-input"
+                           id="roomCodeInput"
                            class="code-input"
-                           placeholder="123-456"
+                           placeholder="000-000"
                            maxlength="7"
                            oninput="formatCode(this)"
-                           autocomplete="off"
-                           autofocus>
-                    <button class="btn btn-success" onclick="connectWithCode()">
+                           autocomplete="off">
+                    <button class="btn btn-success" onclick="joinRoom()">
                         ✅ Подключиться
                     </button>
-                </div>
-                
-                <!-- Вариант B: Создать новый код -->
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
-                    <label class="code-input-label">Если вы первое устройство:</label>
-                    <div id="new-code-display" style="
-                        font-size: 32px;
-                        font-weight: bold;
-                        color: #1890ff;
-                        padding: 20px;
-                        background: #e6f7ff;
-                        border-radius: 10px;
-                        margin: 15px 0;
-                        border: 2px dashed #1890ff;
-                        letter-spacing: 5px;
-                        font-family: 'Courier New', monospace;
-                    ">
-                        --- ---
-                    </div>
-                    <button class="btn btn-primary" onclick="generateNewCode()">
-                        🎲 Создать новый код
+                    <button class="btn btn-secondary" onclick="showCreateSection()">
+                        ↩️ Я первое устройство
                     </button>
-                    
-                    <div class="qrcode-container">
-                        <p><strong>Покажите QR-код другому устройству:</strong></p>
-                        <div id="qrcode"></div>
-                    </div>
                 </div>
-                
-                <div class="instructions">
-                    <h3>📋 Как это работает:</h3>
-                    <ol>
-                        <li><strong>На первом устройстве</strong> → Создайте код</li>
-                        <li><strong>На втором устройстве</strong> → Введите тот же код</li>
-                        <li><strong>Готово!</strong> → Задачи синхронизируются автоматически</li>
-                    </ol>
-                </div>
+            </div>
+            
+            <div style="
+                background: #fff7e6;
+                border: 2px solid #ffd591;
+                border-radius: 12px;
+                padding: 20px;
+                margin-top: 30px;
+            ">
+                <h3>📋 Как работает:</h3>
+                <ol style="margin-left: 20px; color: #5d6d7e;">
+                    <li><strong>На ПК:</strong> Создайте комнату → Запомните код</li>
+                    <li><strong>На телефоне:</strong> Введите тот же код</li>
+                    <li><strong>Добавляйте заметки на любом устройстве</strong></li>
+                    <li><strong>Автоматическая синхронизация</strong> каждые 3 секунды</li>
+                </ol>
             </div>
         </div>
         
-        <!-- ШАГ 2: ОСНОВНОЕ ПРИЛОЖЕНИЕ (после подключения) -->
-        <div id="app-content">
-            <h2>📝 Мои задачи</h2>
+        <!-- ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+        <div id="app">
+            <h1>📝 Общие заметки</h1>
             
-            <div id="sync-info" class="message success">
-                ✅ Синхронизация активна. Код: <span id="current-code"></span>
+            <div class="sync-status" id="syncStatus">
+                ✅ Синхронизация активна. Код: <span id="currentRoomCode"></span>
             </div>
             
             <!-- Форма добавления -->
-            <div class="task-form">
+            <div class="add-form">
                 <input type="text" 
-                       id="task-input"
-                       placeholder="Что нужно сделать?..."
+                       id="taskInput"
+                       placeholder="Новая заметка..."
                        onkeypress="if(event.key=='Enter') addTask()">
-                <button class="btn btn-primary" onclick="addTask()">
-                    ➕ Добавить
-                </button>
+                <button id="addBtn" onclick="addTask()">➕ Добавить</button>
             </div>
             
-            <!-- Список задач -->
-            <div id="tasks-container">
+            <!-- Список заметок -->
+            <div class="tasks-container" id="tasksContainer">
                 <p style="text-align: center; color: #888; padding: 40px;">
-                    Задач пока нет. Добавьте первую!
+                    Заметок пока нет. Добавьте первую!
                 </p>
             </div>
             
             <!-- Статистика -->
             <div class="stats">
-                <div>Всего: <span id="total-tasks">0</span></div>
-                <div>Выполнено: <span id="completed-tasks">0</span></div>
-                <button class="btn btn-secondary" onclick="clearCompleted()">
+                <div>Всего: <span id="totalCount">0</span></div>
+                <div>Выполнено: <span id="completedCount">0</span></div>
+                <button class="btn-secondary" style="padding: 10px 20px;" onclick="clearCompleted()">
                     🗑️ Очистить выполненные
                 </button>
-                <button class="btn" style="background: #ff4d4f; color: white;" onclick="disconnect()">
-                    🔌 Отключить
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-secondary" onclick="disconnect()">
+                    🔌 Отключить синхронизацию
                 </button>
             </div>
         </div>
     </div>
     
-    <!-- QR код библиотека -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    
     <script>
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let tasks = [];
-        let syncCode = null;
+        let roomCode = null;
         let syncInterval = null;
+        let deviceId = localStorage.getItem('device_id') || 'device_' + Date.now();
         
-        // ========== ЗАГРУЗКА ==========
+        // ========== ЗАГРУЗКА ПРИЛОЖЕНИЯ ==========
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Приложение загружено');
+            console.log('🚀 Загрузка приложения...');
             
-            // Проверяем, есть ли уже подключение
-            const savedCode = localStorage.getItem('todo_sync_code');
-            if (savedCode) {
-                // Автоподключение
-                syncCode = savedCode;
-                showApp(savedCode);
+            // Генерируем ID устройства если нет
+            if (!localStorage.getItem('device_id')) {
+                localStorage.setItem('device_id', deviceId);
+            }
+            
+            // Проверяем сохраненную комнату
+            const savedRoom = localStorage.getItem('sync_room');
+            if (savedRoom) {
+                roomCode = savedRoom;
+                showApp();
                 loadTasks();
                 startSync();
             } else {
-                // Показываем создание кода
-                generateNewCode();
+                // Показываем создание комнаты
+                createNewRoom();
+                showJoinSection(); // Сразу показываем поле для ввода кода
             }
             
-            // Фокус на поле ввода
-            document.getElementById('code-input').focus();
+            console.log('✅ Устройство:', deviceId);
         });
         
-        // ========== РАБОТА С КОДАМИ ==========
+        // ========== УПРАВЛЕНИЕ КОМНАТАМИ ==========
         
-        // Создать новый код
-        function generateNewCode() {
+        // Создать новую комнату
+        function createNewRoom() {
             const part1 = Math.floor(100 + Math.random() * 900);
             const part2 = Math.floor(100 + Math.random() * 900);
-            const code = `${part1}-${part2}`;
+            roomCode = `${part1}-${part2}`;
             
-            document.getElementById('new-code-display').textContent = code;
+            document.getElementById('newCode').textContent = roomCode;
+            showMessage(`Создана комната: ${roomCode}`, 'info');
             
-            // Генерируем QR-код
-            generateQRCode(code);
-            
-            // Заполняем поле ввода этим кодом (для удобства копирования)
-            document.getElementById('code-input').value = code;
-            
-            showMessage(`Создан код: ${code} - покажите его другому устройству`, 'success');
+            // Показываем поле для ввода кода на втором устройстве
+            showJoinSection();
         }
         
-        // Подключиться по коду
-        function connectWithCode() {
-            const input = document.getElementById('code-input');
+        // Показать секцию создания
+        function showCreateSection() {
+            document.getElementById('createSection').style.display = 'block';
+            document.getElementById('joinSection').style.display = 'none';
+        }
+        
+        // Показать секцию подключения
+        function showJoinSection() {
+            document.getElementById('createSection').style.display = 'none';
+            document.getElementById('joinSection').style.display = 'block';
+            document.getElementById('roomCodeInput').focus();
+        }
+        
+        // Подключиться к комнате
+        function joinRoom() {
+            const input = document.getElementById('roomCodeInput');
             let code = input.value.trim().toUpperCase();
             
             // Проверка формата
@@ -429,35 +408,34 @@
                 return;
             }
             
-            // Сохраняем код
-            syncCode = code;
-            localStorage.setItem('todo_sync_code', code);
+            roomCode = code;
+            
+            // Сохраняем комнату
+            localStorage.setItem('sync_room', roomCode);
             
             // Показываем основное приложение
-            showApp(code);
+            showApp();
             
-            // Загружаем задачи
+            // Загружаем и начинаем синхронизацию
             loadTasks();
-            
-            // Запускаем синхронизацию
             startSync();
             
-            showMessage(`✅ Подключено! Код: ${code}`, 'success');
+            showMessage(`✅ Подключено к комнате: ${roomCode}`, 'success');
         }
         
         // Показать основное приложение
-        function showApp(code) {
-            document.getElementById('connect-section').style.display = 'none';
-            document.getElementById('app-content').style.display = 'block';
-            document.getElementById('current-code').textContent = code;
+        function showApp() {
+            document.getElementById('connectScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('currentRoomCode').textContent = roomCode;
         }
         
         // Отключиться
         function disconnect() {
-            if (!confirm('Отключить синхронизацию?')) return;
+            if (!confirm('Отключиться от синхронизации?')) return;
             
-            syncCode = null;
-            localStorage.removeItem('todo_sync_code');
+            roomCode = null;
+            localStorage.removeItem('sync_room');
             
             if (syncInterval) {
                 clearInterval(syncInterval);
@@ -466,128 +444,236 @@
             
             tasks = [];
             
-            // Возвращаем к подключению
-            document.getElementById('connect-section').style.display = 'block';
-            document.getElementById('app-content').style.display = 'none';
+            // Возвращаем к выбору комнаты
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('connectScreen').style.display = 'block';
             
-            // Генерируем новый код
-            generateNewCode();
-            
+            createNewRoom();
             showMessage('Синхронизация отключена', 'info');
         }
         
-        // ========== СИНХРОНИЗАЦИЯ ==========
+        // ========== СИНХРОНИЗАЦИЯ ДАННЫХ ==========
         
         // Запустить синхронизацию
         function startSync() {
             // Синхронизируем каждые 3 секунды
-            syncInterval = setInterval(syncTasks, 3000);
+            syncInterval = setInterval(syncData, 3000);
             
-            // Первая синхронизация сразу
-            syncTasks();
+            // Первая синхронизация
+            syncData();
+            
+            console.log('🔄 Синхронизация запущена');
         }
         
-        // Синхронизировать задачи
-        function syncTasks() {
-            if (!syncCode) return;
+        // Синхронизировать данные
+        async function syncData() {
+            if (!roomCode) return;
             
-            // Сохраняем задачи
-            saveTasks();
+            try {
+                // 1. Отправляем наши задачи
+                await saveTasksToServer();
+                
+                // 2. Загружаем задачи с сервера
+                await loadTasksFromServer();
+                
+                // 3. Обновляем статус
+                updateSyncStatus();
+                
+            } catch (error) {
+                console.error('❌ Ошибка синхронизации:', error);
+            }
+        }
+        
+        // Сохранить задачи на "сервер" (localStorage)
+        async function saveTasksToServer() {
+            if (!roomCode) return;
             
-            // Обновляем статус
+            const syncData = {
+                roomCode: roomCode,
+                tasks: tasks,
+                deviceId: deviceId,
+                lastUpdate: Date.now(),
+                deviceName: getDeviceName()
+            };
+            
+            // Сохраняем в localStorage как временное хранилище
+            localStorage.setItem('sync_room_' + roomCode, JSON.stringify(syncData));
+            
+            console.log('💾 Отправлено на сервер:', tasks.length, 'задач');
+        }
+        
+        // Загрузить задачи с "сервера"
+        async function loadTasksFromServer() {
+            if (!roomCode) return;
+            
+            // Читаем из localStorage
+            const saved = localStorage.getItem('sync_room_' + roomCode);
+            
+            if (saved) {
+                try {
+                    const serverData = JSON.parse(saved);
+                    
+                    if (serverData.tasks && Array.isArray(serverData.tasks)) {
+                        // Объединяем задачи (сохраняем уникальные)
+                        mergeTasks(serverData.tasks);
+                        
+                        // Обновляем отображение
+                        renderTasks();
+                        updateStats();
+                        
+                        console.log('📥 Загружено с сервера:', serverData.tasks.length, 'задач');
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка загрузки:', error);
+                }
+            }
+        }
+        
+        // Объединить задачи (двусторонняя синхронизация)
+        function mergeTasks(serverTasks) {
+            // Создаем Map для быстрого поиска
+            const taskMap = new Map();
+            
+            // Добавляем все наши задачи
+            tasks.forEach(task => {
+                taskMap.set(task.id, task);
+            });
+            
+            // Добавляем задачи с сервера (перезаписываем если новее)
+            serverTasks.forEach(serverTask => {
+                const existingTask = taskMap.get(serverTask.id);
+                
+                if (!existingTask) {
+                    // Новая задача - добавляем
+                    taskMap.set(serverTask.id, serverTask);
+                } else {
+                    // Задача уже есть - проверяем кто новее
+                    const ourTime = existingTask.updatedAt || existingTask.createdAt;
+                    const serverTime = serverTask.updatedAt || serverTask.createdAt;
+                    
+                    if (serverTime > ourTime) {
+                        // Серверная версия новее - обновляем
+                        taskMap.set(serverTask.id, serverTask);
+                    }
+                }
+            });
+            
+            // Преобразуем обратно в массив и сортируем по дате
+            tasks = Array.from(taskMap.values())
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            console.log('🔄 Объединено задач:', tasks.length);
+        }
+        
+        // Обновить статус синхронизации
+        function updateSyncStatus() {
             const now = new Date();
-            document.getElementById('sync-info').innerHTML = 
-                `✅ Синхронизировано ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}. Код: ${syncCode}`;
+            const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            document.getElementById('syncStatus').innerHTML = `
+                ✅ Синхронизировано ${timeStr} | Комната: ${roomCode}
+            `;
         }
         
         // ========== РАБОТА С ЗАДАЧАМИ ==========
         
-        // Добавить задачу
+        // Добавить новую задачу
         function addTask() {
-            const input = document.getElementById('task-input');
+            const input = document.getElementById('taskInput');
             const text = input.value.trim();
             
             if (!text) {
-                showMessage('Введите текст задачи', 'error');
+                showMessage('Введите текст заметки', 'warning');
                 return;
             }
             
             const newTask = {
-                id: Date.now().toString(),
+                id: Date.now().toString() + '_' + deviceId,
                 text: text,
                 completed: false,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                deviceId: deviceId,
+                deviceName: getDeviceName()
             };
             
+            // Добавляем в начало
             tasks.unshift(newTask);
-            saveTasks();
-            renderTasks();
             
+            // Сохраняем и отображаем
+            saveTasksToServer();
+            renderTasks();
+            updateStats();
+            
+            // Очищаем поле
             input.value = '';
             input.focus();
             
             // Сразу синхронизируем
-            syncTasks();
+            syncData();
+            
+            showMessage('✅ Заметка добавлена', 'success');
+            console.log('➕ Добавлена задача с устройства:', deviceId);
         }
         
         // Переключить статус задачи
-        function toggleTask(id) {
-            const task = tasks.find(t => t.id === id);
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.completed = !task.completed;
-                saveTasks();
+                task.updatedAt = new Date().toISOString();
+                
+                saveTasksToServer();
                 renderTasks();
-                syncTasks();
+                updateStats();
+                syncData();
             }
         }
         
         // Удалить задачу
-        function deleteTask(id) {
-            if (!confirm('Удалить задачу?')) return;
+        function deleteTask(taskId) {
+            if (!confirm('Удалить эту заметку?')) return;
             
-            tasks = tasks.filter(t => t.id !== id);
-            saveTasks();
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveTasksToServer();
             renderTasks();
-            syncTasks();
+            updateStats();
+            syncData();
+            
+            showMessage('🗑️ Заметка удалена', 'info');
         }
         
         // Очистить выполненные
         function clearCompleted() {
-            const completed = tasks.filter(t => t.completed);
-            if (completed.length === 0) {
-                showMessage('Нет выполненных задач', 'info');
+            const completedTasks = tasks.filter(t => t.completed);
+            
+            if (completedTasks.length === 0) {
+                showMessage('Нет выполненных заметок', 'info');
                 return;
             }
             
-            if (!confirm(`Удалить ${completed.length} выполненных задач?`)) return;
+            if (!confirm(`Удалить ${completedTasks.length} выполненных заметок?`)) return;
             
             tasks = tasks.filter(t => !t.completed);
-            saveTasks();
+            saveTasksToServer();
             renderTasks();
-            syncTasks();
+            updateStats();
+            syncData();
             
-            showMessage(`Удалено ${completed.length} задач`, 'success');
+            showMessage(`🗑️ Удалено ${completedTasks.length} заметок`, 'success');
         }
         
         // Загрузить задачи
         function loadTasks() {
-            if (!syncCode) return;
-            
             // Пробуем загрузить из синхронизации
-            const saved = localStorage.getItem('sync_data_' + syncCode);
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    tasks = data.tasks || [];
-                } catch (e) {
-                    tasks = [];
-                }
-            } else {
-                // Или локальные задачи
-                const local = localStorage.getItem('local_tasks');
-                if (local) {
+            loadTasksFromServer();
+            
+            // Если все еще нет задач, пробуем локальные
+            if (tasks.length === 0) {
+                const localTasks = localStorage.getItem('local_tasks_' + deviceId);
+                if (localTasks) {
                     try {
-                        tasks = JSON.parse(local);
+                        tasks = JSON.parse(localTasks);
                     } catch (e) {
                         tasks = [];
                     }
@@ -595,61 +681,49 @@
             }
             
             renderTasks();
-        }
-        
-        // Сохранить задачи
-        function saveTasks() {
-            // Локальное сохранение
-            localStorage.setItem('local_tasks', JSON.stringify(tasks));
-            
-            // Синхронизированное сохранение
-            if (syncCode) {
-                localStorage.setItem('sync_data_' + syncCode, JSON.stringify({
-                    tasks: tasks,
-                    lastUpdate: Date.now()
-                }));
-            }
+            updateStats();
         }
         
         // Отобразить задачи
         function renderTasks() {
-            const container = document.getElementById('tasks-container');
+            const container = document.getElementById('tasksContainer');
             
             if (tasks.length === 0) {
                 container.innerHTML = `
                     <p style="text-align: center; color: #888; padding: 40px;">
-                        Задач пока нет. Добавьте первую!
+                        Заметок пока нет. Добавьте первую!
                     </p>
                 `;
-            } else {
-                container.innerHTML = tasks.map(task => `
-                    <div class="task-item">
-                        <input type="checkbox" 
-                               class="task-checkbox" 
-                               ${task.completed ? 'checked' : ''}
-                               onchange="toggleTask('${task.id}')">
-                        <span class="task-text ${task.completed ? 'completed' : ''}">
-                            ${task.text}
-                        </span>
-                        <button onclick="deleteTask('${task.id}')" 
-                                style="
-                                    background: #ff4d4f;
-                                    color: white;
-                                    border: none;
-                                    padding: 8px 12px;
-                                    border-radius: 6px;
-                                    cursor: pointer;
-                                ">
-                            ✕
-                        </button>
-                    </div>
-                `).join('');
+                return;
             }
             
-            // Обновляем статистику
-            document.getElementById('total-tasks').textContent = tasks.length;
-            document.getElementById('completed-tasks').textContent = 
-                tasks.filter(t => t.completed).length;
+            container.innerHTML = tasks.map(task => `
+                <div class="task-item">
+                    <input type="checkbox" 
+                           class="task-checkbox" 
+                           ${task.completed ? 'checked' : ''}
+                           onchange="toggleTask('${task.id}')">
+                    <span class="task-text ${task.completed ? 'completed' : ''}">
+                        ${escapeHtml(task.text)}
+                        ${task.deviceId !== deviceId ? 
+                          `<span style="font-size: 12px; color: #1890ff; margin-left: 5px;">
+                            (с ${task.deviceName || 'другого устройства'})
+                          </span>` : ''}
+                    </span>
+                    <button class="task-delete" onclick="deleteTask('${task.id}')">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        // Обновить статистику
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('completedCount').textContent = completed;
         }
         
         // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
@@ -665,33 +739,69 @@
             input.value = value.substring(0, 7).toUpperCase();
         }
         
-        // Показать сообщение
-        function showMessage(text, type = 'info') {
-            const messageEl = document.getElementById('status-message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            
-            // Автоскрытие
-            setTimeout(() => {
-                messageEl.textContent = 'Введите код с другого устройства или создайте новый';
-                messageEl.className = 'message';
-            }, 5000);
+        // Получить имя устройства
+        function getDeviceName() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            return isMobile ? '📱 Телефон' : '💻 Компьютер';
         }
         
-        // Генерация QR-кода
-        function generateQRCode(code) {
-            const container = document.getElementById('qrcode');
-            container.innerHTML = '';
+        // Показать сообщение
+        function showMessage(text, type = 'info') {
+            console.log(`💬 ${type}: ${text}`);
             
-            QRCode.toCanvas(container, code, {
-                width: 200,
-                height: 200,
-                margin: 1,
-                color: {
-                    dark: '#1890ff',
-                    light: '#ffffff'
+            // Создаем уведомление
+            const notification = document.createElement('div');
+            notification.textContent = text;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 20px 30px;
+                border-radius: 12px;
+                color: white;
+                font-weight: bold;
+                z-index: 10000;
+                background: ${type === 'error' ? '#ff4d4f' : 
+                            type === 'success' ? '#52c41a' : 
+                            type === 'warning' ? '#faad14' : '#1890ff'};
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                animation: slideDown 0.3s ease;
+                max-width: 90%;
+                text-align: center;
+                white-space: nowrap;
+            `;
+            
+            // Анимация
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translate(-50%, -100%); opacity: 0; }
+                    to { transform: translate(-50%, 0); opacity: 1; }
                 }
-            });
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            // Автоматически скрываем
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                    document.head.removeChild(style);
+                }, 500);
+            }, 3000);
+        }
+        
+        // Экранировать HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ==========
@@ -699,11 +809,13 @@
         window.toggleTask = toggleTask;
         window.deleteTask = deleteTask;
         window.clearCompleted = clearCompleted;
-        window.generateNewCode = generateNewCode;
-        window.connectWithCode = connectWithCode;
+        window.createNewRoom = createNewRoom;
+        window.joinRoom = joinRoom;
+        window.showCreateSection = showCreateSection;
+        window.showJoinSection = showJoinSection;
         window.disconnect = disconnect;
         
-        console.log('Приложение готово!');
+        console.log('🚀 Приложение готово! Текущее устройство:', getDeviceName());
     </script>
 </body>
 </html>
