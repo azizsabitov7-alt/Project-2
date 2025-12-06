@@ -3,62 +3,511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo - Синхронизация</title>
+    <title>Todo App - Синхронизация</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- Стили -->
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; }
-        input, button { padding: 10px; margin: 5px; }
-        .task { padding: 10px; border: 1px solid #ddd; margin: 5px 0; display: flex; justify-content: space-between; }
-        .completed { text-decoration: line-through; color: #888; }
-        #auth { background: #f0f0f0; padding: 20px; border-radius: 10px; margin: 20px 0; }
-        #app { display: none; }
+        /* Основные стили */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Заголовок */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        /* Секция авторизации */
+        #auth-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .auth-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .auth-btn.google {
+            background: #4285f4;
+            color: white;
+        }
+        
+        .auth-btn.google:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+        
+        .auth-btn.local {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .auth-btn.local:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+        }
+        
+        /* Основное приложение */
+        #app-content {
+            margin-top: 30px;
+        }
+        
+        /* Форма добавления задачи */
+        .add-task-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        #new-task-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        #new-task-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        #add-task-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        #add-task-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Фильтры */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #e1e5e9;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        /* Список задач */
+        #tasks-container {
+            min-height: 200px;
+            margin-bottom: 30px;
+        }
+        
+        .task-item {
+            background: white;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .task-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        .task-text {
+            flex: 1;
+            font-size: 16px;
+            color: #2c3e50;
+            word-break: break-word;
+        }
+        
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #95a5a6;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .task-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .task-btn:hover {
+            color: #667eea;
+            background: #f8f9fa;
+        }
+        
+        .task-btn.delete:hover {
+            color: #e74c3c;
+        }
+        
+        /* Статистика */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #e8e8e8;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stats p {
+            color: #2c3e50;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        #total-tasks, #completed-tasks {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        #clear-completed-btn {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: 2px solid #e74c3c;
+            color: #e74c3c;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        #clear-completed-btn:hover {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        /* Информация о пользователе */
+        #user-info {
+            background: #e6f7ff;
+            border: 2px solid #91d5ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: none;
+        }
+        
+        #logout-btn {
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .add-task-form {
+                flex-direction: column;
+            }
+            
+            #add-task-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .filters {
+                justify-content: center;
+            }
+        }
+        
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+        }
+        
+        /* Сообщение при отсутствии задач */
+        .empty-state {
+            text-align: center;
+            color: #95a5a6;
+            font-style: italic;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #e1e5e9;
+        }
     </style>
 </head>
 <body>
-    <h1>📝 Todo App</h1>
-    
-    <!-- Авторизация -->
-    <div id="auth">
-        <h3>Вход для синхронизации:</h3>
-        <button id="loginGoogle">Войти через Google</button>
-        <button id="loginLocal">Локальный режим</button>
-        <p><small>Project ID: sync-todo-app-e617f</small></p>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tasks"></i> Todo App</h1>
+            <p>Синхронизация задач между устройствами</p>
+        </header>
+        
+        <!-- Секция авторизации -->
+        <section id="auth-section">
+            <h2><i class="fas fa-sign-in-alt"></i> Вход в систему</h2>
+            <p>Войдите, чтобы синхронизировать задачи на всех устройствах</p>
+            
+            <div class="auth-buttons">
+                <button id="google-login-btn" class="auth-btn google">
+                    <i class="fab fa-google"></i> Войти через Google
+                </button>
+                <button id="local-mode-btn" class="auth-btn local">
+                    <i class="fas fa-laptop"></i> Локальный режим
+                </button>
+            </div>
+            
+            <p style="margin-top: 15px; color: #6c757d; font-size: 14px;">
+                <i class="fas fa-info-circle"></i> Project ID: sync-todo-app-e617f
+            </p>
+        </section>
+        
+        <!-- Информация о пользователе -->
+        <div id="user-info">
+            <h3><i class="fas fa-user"></i> Вы вошли как: <span id="user-email"></span></h3>
+            <button id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Выйти
+            </button>
+        </div>
+        
+        <!-- Основное приложение -->
+        <div id="app-content" style="display: none;">
+            <h2><i class="fas fa-list-check"></i> Мои задачи</h2>
+            
+            <!-- Форма добавления задачи -->
+            <div class="add-task-form">
+                <input type="text" 
+                       id="new-task-input" 
+                       placeholder="Введите новую задачу..." 
+                       maxlength="200"
+                       autocomplete="off">
+                <button id="add-task-btn">
+                    <i class="fas fa-plus"></i> Добавить
+                </button>
+            </div>
+            
+            <!-- Фильтры -->
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Все задачи</button>
+                <button class="filter-btn" data-filter="active">Активные</button>
+                <button class="filter-btn" data-filter="completed">Выполненные</button>
+            </div>
+            
+            <!-- Список задач -->
+            <div id="tasks-container">
+                <p class="empty-state">Задач пока нет. Добавьте первую задачу!</p>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="stats">
+                <p>Всего задач: <span id="total-tasks">0</span></p>
+                <p>Выполнено: <span id="completed-tasks">0</span></p>
+                <button id="clear-completed-btn">
+                    <i class="fas fa-trash"></i> Очистить выполненные
+                </button>
+            </div>
+            
+            <!-- Инструкция -->
+            <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                <h4><i class="fas fa-sync-alt"></i> Как работает синхронизация:</h4>
+                <ol style="margin-left: 20px; color: #5d6d7e;">
+                    <li>Войдите через Google на всех устройствах</li>
+                    <li>Добавляйте, редактируйте или удаляйте задачи</li>
+                    <li>Изменения автоматически появятся на всех устройствах</li>
+                </ol>
+            </div>
+        </div>
     </div>
     
-    <!-- Основное приложение -->
-    <div id="app">
-        <h3>Привет, <span id="userEmail"></span>!</h3>
-        
-        <!-- Добавление задачи -->
-        <div>
-            <input type="text" id="taskInput" placeholder="Новая задача..." style="width: 70%;">
-            <button id="addTask">Добавить</button>
-        </div>
-        
-        <!-- Фильтры -->
-        <div style="margin: 10px 0;">
-            <button class="filter" data-filter="all">Все</button>
-            <button class="filter" data-filter="active">Активные</button>
-            <button class="filter" data-filter="completed">Выполненные</button>
-        </div>
-        
-        <!-- Список задач -->
-        <div id="taskList"></div>
-        
-        <!-- Статистика -->
-        <div style="margin-top: 20px;">
-            <p>Всего: <span id="total">0</span> | Выполнено: <span id="completed">0</span></p>
-            <button id="clearCompleted">Очистить выполненные</button>
-            <button id="logout">Выйти</button>
-        </div>
-    </div>
-    
+    <!-- Основной скрипт -->
     <script src="app.js"></script>
+    
+    <script>
+        // Простая проверка загрузки
+        console.log('✅ HTML загружен');
+        
+        // Проверяем элементы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ DOM полностью загружен');
+            
+            // Проверяем наличие ключевых элементов
+            const elements = [
+                'new-task-input',
+                'add-task-btn',
+                'tasks-container',
+                'google-login-btn',
+                'local-mode-btn'
+            ];
+            
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                console.log(el ? `✅ Найден элемент: ${id}` : `❌ Не найден элемент: ${id}`);
+            });
+        });
+    </script>
 </body>
 </html>
